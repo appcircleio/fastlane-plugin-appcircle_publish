@@ -93,4 +93,4 @@ If you have trouble using plugins, check out the [Plugins Troubleshooting](https
 
 ### Reference
 
-For more detailed instructions and support, visit the [Appcircle Publish documentation](https://appcircle.io/publish-to-stores).
+For more detailed instructions and support, visit the [Appcircle Publish documentation](https://docs.appcircle.io/publish-to-stores-module).
