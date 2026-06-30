@@ -84,4 +84,66 @@ module UploadService
       raise e
     end
   end
+
+  def self.auth_headers(token)
+    { Authorization: "Bearer #{token}", accept: 'application/json' }
+  end
+
+  def self.get_app_versions(auth_token:, platform:, publish_profile_id:, api_endpoint: BASE_URL)
+    url = "#{api_endpoint}/publish/v2/profiles/#{platform}/#{publish_profile_id}/app-versions"
+    data = JSON.parse(RestClient.get(url, auth_headers(auth_token)).body)
+    data.is_a?(Array) ? data : (data['data'] || [])
+  end
+
+  # The most recently created app version (used after an upload).
+  def self.get_latest_app_version_id(auth_token:, platform:, publish_profile_id:, api_endpoint: BASE_URL)
+    versions = get_app_versions(auth_token: auth_token, platform: platform, publish_profile_id: publish_profile_id, api_endpoint: api_endpoint)
+    UI.user_error!("No app versions found on the publish profile after upload.") if versions.empty?
+    versions[0]['id']
+  end
+
+  # The profile's current release candidate (published in publish-only mode).
+  def self.get_release_candidate_version_id(auth_token:, platform:, publish_profile_id:, api_endpoint: BASE_URL)
+    versions = get_app_versions(auth_token: auth_token, platform: platform, publish_profile_id: publish_profile_id, api_endpoint: api_endpoint)
+    rc = versions.find { |v| v['releaseCandidate'] == true }
+    UI.user_error!("No release candidate app version found on the publish profile. Mark a version as release candidate (or enable upload) before publishing.") if rc.nil?
+    rc['id']
+  end
+
+  def self.mark_release_candidate(auth_token:, platform:, publish_profile_id:, app_version_id:, api_endpoint: BASE_URL)
+    uri = URI("#{api_endpoint}/publish/v2/profiles/#{platform}/#{publish_profile_id}/app-versions/#{app_version_id}")
+    uri.query = URI.encode_www_form({ action: 'releaseCandidate' })
+    headers = { Authorization: "Bearer #{auth_token}", content_type: :json, accept: 'application/json' }
+    RestClient.patch(uri.to_s, { ReleaseCandidate: true }.to_json, headers)
+  end
+
+  # In-progress publishes for the given profile (scope: target profile).
+  def self.get_active_publish_count_for_profile(auth_token:, publish_profile_id:, api_endpoint: BASE_URL)
+    url = "#{api_endpoint}/build/v1/queue/my-dashboard?page=1&size=1000"
+    data = JSON.parse(RestClient.get(url, auth_headers(auth_token)).body)
+    items = data['data'] || []
+    items.count { |p| p['publishId'] && p['profileId'] == publish_profile_id }
+  end
+
+  def self.get_publish_id(auth_token:, platform:, publish_profile_id:, app_version_id:, api_endpoint: BASE_URL)
+    url = "#{api_endpoint}/publish/v2/profiles/#{platform}/#{publish_profile_id}/app-versions/#{app_version_id}/publish"
+    data = JSON.parse(RestClient.get(url, auth_headers(auth_token)).body)
+    steps = data['steps'] || []
+    publish_id = steps[0] && steps[0]['publishId']
+    UI.user_error!("No publish flow steps found for the app version. Configure a publish flow on the profile first.") if publish_id.nil?
+    publish_id
+  end
+
+  def self.start_publish(auth_token:, platform:, publish_profile_id:, publish_id:, api_endpoint: BASE_URL)
+    uri = URI("#{api_endpoint}/publish/v2/profiles/#{platform}/#{publish_profile_id}/publish/#{publish_id}")
+    uri.query = URI.encode_www_form({ action: 'restart' })
+    headers = { Authorization: "Bearer #{auth_token}", content_type: :json, accept: 'application/json' }
+    RestClient.post(uri.to_s, "{}", headers)
+  end
+
+  # Single fetch of the publish object (status + steps). Polled by the action.
+  def self.get_publish_object(auth_token:, platform:, publish_profile_id:, app_version_id:, api_endpoint: BASE_URL)
+    url = "#{api_endpoint}/publish/v1/profiles/#{platform}/#{publish_profile_id}/app-versions/#{app_version_id}/publish"
+    JSON.parse(RestClient.get(url, auth_headers(auth_token)).body)
+  end
 end

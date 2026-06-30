@@ -1,5 +1,20 @@
 describe Fastlane::Actions::AppcirclePublishAction do
   describe '#run' do
+    context 'when neither upload nor publish is enabled' do
+      it 'raises an error' do
+        params = {
+          personalAPIToken: 'test_token',
+          platform: 'ios',
+          publishProfile: 'My Profile',
+          upload: false,
+          publish: false
+        }
+        expect do
+          Fastlane::Actions::AppcirclePublishAction.run(params)
+        end.to raise_error(FastlaneCore::Interface::FastlaneError)
+      end
+    end
+
     context 'when personalAPIToken and personalAccessKey are both nil' do
       it 'raises an error for missing authentication' do
         params = {
@@ -7,9 +22,9 @@ describe Fastlane::Actions::AppcirclePublishAction do
           personalAccessKey: nil,
           platform: 'ios',
           publishProfile: 'My Profile',
+          upload: true,
           appPath: 'test.ipa'
         }
-
         expect do
           Fastlane::Actions::AppcirclePublishAction.run(params)
         end.to raise_error(FastlaneCore::Interface::FastlaneError)
@@ -23,9 +38,9 @@ describe Fastlane::Actions::AppcirclePublishAction do
           personalAccessKey: 'test_key',
           platform: 'ios',
           publishProfile: 'My Profile',
+          upload: true,
           appPath: 'test.ipa'
         }
-
         expect do
           Fastlane::Actions::AppcirclePublishAction.run(params)
         end.to raise_error(FastlaneCore::Interface::FastlaneError)
@@ -36,12 +51,11 @@ describe Fastlane::Actions::AppcirclePublishAction do
       it 'raises an error for invalid file extension' do
         params = {
           personalAPIToken: 'test_token',
-          personalAccessKey: nil,
           platform: 'ios',
           publishProfile: 'My Profile',
+          upload: true,
           appPath: 'test.txt'
         }
-
         expect do
           Fastlane::Actions::AppcirclePublishAction.run(params)
         end.to raise_error(RuntimeError, /Invalid file extension/)
@@ -52,12 +66,10 @@ describe Fastlane::Actions::AppcirclePublishAction do
       it 'raises an error for invalid platform' do
         params = {
           personalAPIToken: 'test_token',
-          personalAccessKey: nil,
           platform: 'windows',
           publishProfile: 'My Profile',
-          appPath: 'test.ipa'
+          publish: true
         }
-
         expect do
           Fastlane::Actions::AppcirclePublishAction.run(params)
         end.to raise_error(FastlaneCore::Interface::FastlaneError)
@@ -68,12 +80,10 @@ describe Fastlane::Actions::AppcirclePublishAction do
       it 'raises an error for missing publish profile' do
         params = {
           personalAPIToken: 'test_token',
-          personalAccessKey: nil,
           platform: 'ios',
           publishProfile: nil,
-          appPath: 'test.ipa'
+          publish: true
         }
-
         expect do
           Fastlane::Actions::AppcirclePublishAction.run(params)
         end.to raise_error(FastlaneCore::Interface::FastlaneError)
@@ -83,7 +93,7 @@ describe Fastlane::Actions::AppcirclePublishAction do
 
   describe '.description' do
     it 'returns a description' do
-      expect(Fastlane::Actions::AppcirclePublishAction.description).to eq("Upload an application binary to an Appcircle Publish profile")
+      expect(Fastlane::Actions::AppcirclePublishAction.description).to eq("Upload a binary to an Appcircle Publish profile and/or trigger its publish flow")
     end
   end
 
@@ -104,7 +114,7 @@ describe Fastlane::Actions::AppcirclePublishAction do
     it 'returns available options' do
       options = Fastlane::Actions::AppcirclePublishAction.available_options
       expect(options).not_to be_empty
-      expect(options.map(&:key)).to include(:personalAPIToken, :personalAccessKey, :platform, :publishProfile, :appPath)
+      expect(options.map(&:key)).to include(:personalAPIToken, :personalAccessKey, :platform, :publishProfile, :upload, :publish, :appPath)
     end
   end
 end

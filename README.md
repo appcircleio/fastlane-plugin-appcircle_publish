@@ -2,7 +2,8 @@
 
 [![fastlane Plugin Badge](https://rawcdn.githack.com/fastlane/fastlane/master/fastlane/assets/plugin-badge.svg)](https://rubygems.org/gems/fastlane-plugin-appcircle_publish)
 
-Upload an application binary (`.ipa`, `.apk`, or `.aab`) directly to an Appcircle **Publish** profile from your Fastlane pipeline. The uploaded binary becomes a new app version on the target Publish profile, ready for the profile's configured app store publishing flow.
+Upload an application binary to an Appcircle **Publish** profile and/or trigger
+its publish flow (app store publishing) directly from your Fastlane pipeline.
 
 Learn more about [Appcircle Publish](https://appcircle.io/publish-to-stores?utm_source=fastlane&utm_medium=plugin&utm_campaign=publish).
 
@@ -29,6 +30,28 @@ To generate a Personal API Token:
 
 ![Token Generation](<https://cdn.appcircle.io/docs/assets/image%20(164).png>)
 
+## What the action does
+
+The action has two independent switches — `upload` and `publish` — both default
+to `false`. **You must enable at least one.** Create the Publish profile in
+Appcircle first; the action targets it by name (profile names are unique per
+platform).
+
+| `upload` | `publish` | Behavior |
+|:--------:|:---------:|----------|
+| `true`  | `false` | Upload `appPath` as a new app version on the profile. |
+| `false` | `true`  | Trigger the publish flow for the profile's **current release candidate**. |
+| `true`  | `true`  | Upload `appPath`, **mark the new version as release candidate**, then trigger the publish flow for it. |
+| `false` | `false` | Error — nothing to do. |
+
+**Rules:**
+
+- **In-progress guard:** if a publish is already running for the target profile, the action does **not** start a new one and fails fast.
+- **Release candidate:** when both `upload` and `publish` are `true`, the freshly uploaded version is automatically marked as the release candidate before it is published. In publish-only mode, the profile's existing release candidate is published.
+- **Progress:** while publishing, the action polls the publish status and prints step-by-step progress (with status icons) until the flow succeeds or fails.
+
+> **Manual-approval steps:** if the profile's publish flow contains a manual step (e.g. "Get Approval via Email"), the flow waits for that action and the plugin keeps polling until it completes or the poll times out. For CI use, prefer publish flows without manual gates.
+
 ### Getting Started
 
 This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To get started with `appcircle_publish`, add it to your project by running:
@@ -37,7 +60,7 @@ This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To 
 fastlane add_plugin appcircle_publish
 ```
 
-The action uploads a binary to an **existing** Publish profile. Create the Publish profile in Appcircle first, then reference it by name. Publish profile names are unique per platform. After adding the plugin, configure your Fastfile as follows:
+**Upload only:**
 
 ```ruby
   lane :upload_to_publish do
@@ -45,15 +68,46 @@ The action uploads a binary to an **existing** Publish profile. Create the Publi
       personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
       platform: "$(AC_PLATFORM)", # "ios" or "android"
       publishProfile: "$(AC_PUBLISH_PROFILE)",
+      upload: true,
       appPath: "$(AC_APP_PATH)"
     )
   end
 ```
 
-- `personalAPIToken` / `personalAccessKey`: The Appcircle Personal API Token (or Personal Access Key) is used to authenticate and secure access to Appcircle services. Provide exactly one of them.
-- `platform`: Target platform of the Publish profile. Must be `ios` or `android`.
-- `publishProfile`: Name of the Publish profile to upload the binary to. The name is resolved to the profile for the selected platform.
-- `appPath`: Indicates the file path to the application that will be uploaded. For iOS use a `.ipa` file; for Android use an `.apk` or `.aab` file.
+**Publish only (publishes the profile's current release candidate):**
+
+```ruby
+  lane :trigger_publish do
+    appcircle_publish(
+      personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
+      platform: "$(AC_PLATFORM)",
+      publishProfile: "$(AC_PUBLISH_PROFILE)",
+      publish: true
+    )
+  end
+```
+
+**Upload and publish (uploads, marks it release candidate, then publishes):**
+
+```ruby
+  lane :upload_and_publish do
+    appcircle_publish(
+      personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
+      platform: "$(AC_PLATFORM)",
+      publishProfile: "$(AC_PUBLISH_PROFILE)",
+      upload: true,
+      publish: true,
+      appPath: "$(AC_APP_PATH)"
+    )
+  end
+```
+
+- `personalAPIToken` / `personalAccessKey`: Provide exactly one to authenticate Appcircle services.
+- `platform`: Target platform of the Publish profile — `ios` or `android`.
+- `publishProfile`: Name of the Publish profile to target.
+- `upload` (default `false`): Upload `appPath` as a new app version.
+- `publish` (default `false`): Trigger the profile's publish flow.
+- `appPath`: Path to the application file. Required when `upload` is `true`. For iOS use a `.ipa` file; for Android use a `.apk` or `.aab` file.
 
 ### Self-Hosted Appcircle
 
@@ -67,13 +121,11 @@ If you run a self-hosted Appcircle installation, point the action to your own en
       personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
       platform: "$(AC_PLATFORM)",
       publishProfile: "$(AC_PUBLISH_PROFILE)",
-      appPath: "$(AC_APP_PATH)",
+      publish: true,
       authEndpoint: "https://auth.my-appcircle.example.com",
       apiEndpoint: "https://api.my-appcircle.example.com"
     )
 ```
-
-**Ensure that this action is added after build steps have been completed.**
 
 > **Self-signed or private CA certificates:** If your self-hosted Appcircle server uses a self-signed certificate (or one issued by a private/internal CA), requests will fail certificate validation. The plugin does not disable TLS verification. Trust the server's CA on the machine running Fastlane — add it to the system certificate store, or point the `SSL_CERT_FILE` environment variable at a PEM bundle that includes it.
 
