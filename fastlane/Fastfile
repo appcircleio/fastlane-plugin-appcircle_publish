@@ -1,0 +1,9 @@
+lane :test do
+  appcircle_publish(
+    personalAPIToken: ENV.fetch("AC_PERSONAL_API_TOKEN", nil),
+    appPath: ENV.fetch("AC_APP_PATH", nil),
+    summary: ENV.fetch("AC_SUMMARY", nil),
+    releaseNotes: ENV.fetch("AC_RELEASE_NOTES", nil),
+    publishType: ENV.fetch("AC_PUBLISH_TYPE", nil)
+  )
+end

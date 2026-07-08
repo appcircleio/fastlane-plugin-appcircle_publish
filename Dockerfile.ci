@@ -1,0 +1,7 @@
+FROM ruby:3.1
+
+WORKDIR /plugin
+
+COPY . .
+
+RUN bundle install --jobs=4 --retry=3
