@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.author        = 'appcircleio'
   spec.email         = 'cloud@appcircle.io'
 
-  spec.summary       = 'Upload an application binary to an Appcircle Publish profile'
+  spec.summary       = 'Upload an application binary to an Appcircle Publish profile and/or trigger its publish flow (app store publishing).'
   spec.homepage      = "https://github.com/appcircleio/fastlane-plugin-appcircle_publish"
   spec.license       = "MIT"
 
