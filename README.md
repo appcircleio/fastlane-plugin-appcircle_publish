@@ -13,7 +13,7 @@ Appcircle's **Publish to Stores** module gives you:
 - **Auto Re-sign:** Automatically apply updated signing credentials and versioning to uploaded binaries, keeping releases properly signed without a new build.
 - **Audit and Reporting:** Track every publishing step with audit trails and publish reports for full transparency and compliance.
 
-Learn more about [Appcircle Publish](https://appcircle.io/publish-to-stores?utm_source=fastlane&utm_medium=plugin&utm_campaign=publish).
+Learn more about [Appcircle Publish to Stores](https://appcircle.io/publish-to-stores?utm_source=fastlane&utm_medium=plugin&utm_campaign=publish).
 
 ## System Requirements
 
@@ -32,9 +32,9 @@ Note: Both **Appcircle Cloud** and **self-hosted** Appcircle installations are s
 
 To generate a Personal API Token:
 
-1. Go to the My Organization screen (second option at the bottom left).
-2. Find the Personal API Token section in the top right corner.
-3. Press the "Generate Token" button to generate your first token.
+1. Open the **My Organization** screen from your profile avatar at the bottom left.
+2. Go to the **Security** section and find the **Personal Access Key** card.
+3. Press **Generate Key** to generate your token.
 
 ![Token Generation](https://raw.githubusercontent.com/appcircleio/fastlane-plugin-appcircle_publish/main/images/PAT.png)
 
@@ -153,4 +153,4 @@ If you have trouble using plugins, check out the [Plugins Troubleshooting](https
 
 ### Reference
 
-For more detailed instructions and support, visit the [Appcircle Publish documentation](https://docs.appcircle.io/publish-to-stores-module).
+For more detailed instructions and support, visit the [Appcircle Publish to Stores documentation](https://docs.appcircle.io/marketplace/fastlane/publish-to-stores).
