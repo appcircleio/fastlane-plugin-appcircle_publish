@@ -71,11 +71,11 @@ module Fastlane
           self.ac_login_with_pat(personalAPIToken)
         end
 
-        profileId = UploadService.get_publish_profile_id(auth_token: @@apiToken, platform: platform, profile_name: publishProfile, api_endpoint: @@apiEndpoint)
+        profileId = PublishUploadService.get_publish_profile_id(auth_token: @@apiToken, platform: platform, profile_name: publishProfile, api_endpoint: @@apiEndpoint)
 
         # Guard: never start a new publish if one is already running for the profile.
         if publish
-          active = UploadService.get_active_publish_count_for_profile(auth_token: @@apiToken, publish_profile_id: profileId, api_endpoint: @@apiEndpoint)
+          active = PublishUploadService.get_active_publish_count_for_profile(auth_token: @@apiToken, publish_profile_id: profileId, api_endpoint: @@apiEndpoint)
           if active > 0
             UI.user_error!("A publish is already in progress for profile '#{publishProfile}'. Not starting a new one.")
           end
@@ -85,23 +85,23 @@ module Fastlane
 
         # --- Upload ---
         if upload
-          response = UploadService.upload_artifact(token: @@apiToken, app: appPath, platform: platform, publish_profile_id: profileId, api_endpoint: @@apiEndpoint)
+          response = PublishUploadService.upload_artifact(token: @@apiToken, app: appPath, platform: platform, publish_profile_id: profileId, api_endpoint: @@apiEndpoint)
           self.checkTaskStatus(response["taskId"])
-          appVersionId = UploadService.get_latest_app_version_id(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, api_endpoint: @@apiEndpoint)
+          appVersionId = PublishUploadService.get_latest_app_version_id(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, api_endpoint: @@apiEndpoint)
           UI.success("#{appPath} uploaded to the Appcircle Publish profile '#{publishProfile}' successfully")
         end
 
         # --- Publish ---
         if publish
           if upload && appVersionId
-            UploadService.mark_release_candidate(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, app_version_id: appVersionId, api_endpoint: @@apiEndpoint)
+            PublishUploadService.mark_release_candidate(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, app_version_id: appVersionId, api_endpoint: @@apiEndpoint)
             UI.message("Marked the uploaded version as release candidate.")
           else
-            appVersionId = UploadService.get_release_candidate_version_id(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, api_endpoint: @@apiEndpoint)
+            appVersionId = PublishUploadService.get_release_candidate_version_id(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, api_endpoint: @@apiEndpoint)
           end
 
-          publishId = UploadService.get_publish_id(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, app_version_id: appVersionId, api_endpoint: @@apiEndpoint)
-          UploadService.start_publish(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, publish_id: publishId, api_endpoint: @@apiEndpoint)
+          publishId = PublishUploadService.get_publish_id(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, app_version_id: appVersionId, api_endpoint: @@apiEndpoint)
+          PublishUploadService.start_publish(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, publish_id: publishId, api_endpoint: @@apiEndpoint)
           UI.success("Publish flow started for profile '#{publishProfile}'.")
           success = self.poll_publish_status(platform, profileId, appVersionId)
           UI.user_error!("Publish flow failed.") unless success
@@ -153,7 +153,7 @@ module Fastlane
       def self.poll_publish_status(platform, profileId, appVersionId, interval: 5, max_attempts: 240)
         step_state = {}
         max_attempts.times do
-          data = UploadService.get_publish_object(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, app_version_id: appVersionId, api_endpoint: @@apiEndpoint)
+          data = PublishUploadService.get_publish_object(auth_token: @@apiToken, platform: platform, publish_profile_id: profileId, app_version_id: appVersionId, api_endpoint: @@apiEndpoint)
           (data['steps'] || []).each do |step|
             id = step['id'] || step['name']
             next if id.nil?
