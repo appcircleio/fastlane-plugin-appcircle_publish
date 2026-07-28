@@ -3,9 +3,17 @@
 [![fastlane Plugin Badge](https://rawcdn.githack.com/fastlane/fastlane/master/fastlane/assets/plugin-badge.svg)](https://rubygems.org/gems/fastlane-plugin-appcircle_publish)
 
 Upload an application binary to an Appcircle **Publish** profile and/or trigger
-its publish flow (app store publishing) directly from your Fastlane pipeline.
+its publish flow (app store publishing) directly from your Fastlane lane.
 
-Learn more about [Appcircle Publish](https://appcircle.io/publish-to-stores?utm_source=fastlane&utm_medium=plugin&utm_campaign=publish).
+Appcircle's **Publish to Stores** module gives you:
+
+- **Centralized Store Publishing:** Manage App Store, Google Play, Huawei AppGallery, and Microsoft Intune releases from a single hub instead of navigating each platform separately.
+- **Custom Publish Flows:** Automate your release cycle with repeatable publish flows and ready-to-use integrations tailored to your organization's needs.
+- **Approval Gates:** Add manual approval steps to your publish flow to keep every release under control before it goes live.
+- **Auto Re-sign:** Automatically apply updated signing credentials and versioning to uploaded binaries, keeping releases properly signed without a new build.
+- **Audit and Reporting:** Track every publishing step with audit trails and publish reports for full transparency and compliance.
+
+Learn more about [Appcircle Publish to Stores](https://appcircle.io/publish-to-stores?utm_source=fastlane&utm_medium=plugin&utm_campaign=publish).
 
 ## System Requirements
 
@@ -24,15 +32,15 @@ Note: Both **Appcircle Cloud** and **self-hosted** Appcircle installations are s
 
 To generate a Personal API Token:
 
-1. Go to the My Organization screen (second option at the bottom left).
-2. Find the Personal API Token section in the top right corner.
-3. Press the "Generate Token" button to generate your first token.
+1. Open the **My Organization** screen from your profile avatar at the bottom left.
+2. Go to the **Security** section and find the **Personal Access Key** card.
+3. Press **Generate Key** to generate your token.
 
-![Token Generation](<https://cdn.appcircle.io/docs/assets/image%20(164).png>)
+![Token Generation](https://raw.githubusercontent.com/appcircleio/fastlane-plugin-appcircle_publish/main/images/PAT.png)
 
 ## What the action does
 
-The action has two independent switches — `upload` and `publish` — both default
+The action has two independent switches, `upload` and `publish`, both default
 to `false`. **You must enable at least one.** Create the Publish profile in
 Appcircle first; the action targets it by name (profile names are unique per
 platform).
@@ -42,7 +50,7 @@ platform).
 | `true`  | `false` | Upload `appPath` as a new app version on the profile. |
 | `false` | `true`  | Trigger the publish flow for the profile's **current release candidate**. |
 | `true`  | `true`  | Upload `appPath`, **mark the new version as release candidate**, then trigger the publish flow for it. |
-| `false` | `false` | Error — nothing to do. |
+| `false` | `false` | Error: nothing to do. |
 
 **Rules:**
 
@@ -102,8 +110,8 @@ fastlane add_plugin appcircle_publish
   end
 ```
 
-- `personalAPIToken` / `personalAccessKey`: Provide exactly one to authenticate Appcircle services.
-- `platform`: Target platform of the Publish profile — `ios` or `android`.
+- `personalAPIToken` / `personalAccessKey`: Provide exactly one to authenticate with Appcircle services. Providing both, or neither, fails with a descriptive error.
+- `platform`: Target platform of the Publish profile: `ios` or `android`.
 - `publishProfile`: Name of the Publish profile to target.
 - `upload` (default `false`): Upload `appPath` as a new app version.
 - `publish` (default `false`): Trigger the profile's publish flow.
@@ -127,7 +135,7 @@ If you run a self-hosted Appcircle installation, point the action to your own en
     )
 ```
 
-> **Self-signed or private CA certificates:** If your self-hosted Appcircle server uses a self-signed certificate (or one issued by a private/internal CA), requests will fail certificate validation. The plugin does not disable TLS verification. Trust the server's CA on the machine running Fastlane — add it to the system certificate store, or point the `SSL_CERT_FILE` environment variable at a PEM bundle that includes it.
+> **Self-signed or private CA certificates:** If your self-hosted Appcircle server uses a self-signed certificate (or one issued by a private/internal CA), requests will fail certificate validation. The plugin does not disable TLS verification. Trust the server's CA on the machine running Fastlane: add it to the system certificate store, or point the `SSL_CERT_FILE` environment variable at a PEM bundle that includes it.
 
 ### Leveraging Environment Variables
 
@@ -145,4 +153,4 @@ If you have trouble using plugins, check out the [Plugins Troubleshooting](https
 
 ### Reference
 
-For more detailed instructions and support, visit the [Appcircle Publish documentation](https://docs.appcircle.io/publish-to-stores-module).
+For more detailed instructions and support, visit the [Appcircle Publish to Stores documentation](https://docs.appcircle.io/marketplace/fastlane/publish-to-stores).

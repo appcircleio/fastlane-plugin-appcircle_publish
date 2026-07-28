@@ -3,9 +3,9 @@ require 'uri'
 require 'json'
 require 'rest-client'
 
-BASE_URL = "https://api.appcircle.io"
+module PublishUploadService
+  BASE_URL = "https://api.appcircle.io"
 
-module UploadService
   def self.put_with_retry(url, body, headers, max_retries: 5)
     attempt = 0
     delay = 1.0
