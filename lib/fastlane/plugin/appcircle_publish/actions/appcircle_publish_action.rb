@@ -28,8 +28,9 @@ module Fastlane
       def self.run(params)
         personalAPIToken = params[:personalAPIToken]
         personalAccessKey = params[:personalAccessKey]
-        @@authEndpoint = params[:authEndpoint]
-        @@apiEndpoint = params[:apiEndpoint]
+        subOrganizationName = params[:subOrganizationName]
+        @@authEndpoint = AuthService.normalize_endpoint(params[:authEndpoint], AuthService::CLOUD_AUTH_ENDPOINT)
+        @@apiEndpoint = AuthService.normalize_endpoint(params[:apiEndpoint], AuthService::CLOUD_API_ENDPOINT)
         platform = params[:platform] && params[:platform].downcase
         publishProfile = params[:publishProfile]
         appPath = params[:appPath]
@@ -65,11 +66,13 @@ module Fastlane
         end
 
         # --- Auth + profile ---
+        self.ac_validate_endpoints(@@authEndpoint, @@apiEndpoint)
         if personalAPIToken.nil?
           self.ac_login_with_pak(personalAccessKey)
         else
           self.ac_login_with_pat(personalAPIToken)
         end
+        self.ac_switch_sub_organization(subOrganizationName, personalAPIToken, personalAccessKey)
 
         profileId = PublishUploadService.get_publish_profile_id(auth_token: @@apiToken, platform: platform, profile_name: publishProfile, api_endpoint: @@apiEndpoint)
 
@@ -124,6 +127,28 @@ module Fastlane
       rescue StandardError => e
         UI.error("Login failed: #{e.message}")
         raise e
+      end
+
+      def self.ac_validate_endpoints(auth_endpoint, api_endpoint)
+        AuthService.validate_endpoints(auth_endpoint: auth_endpoint, api_endpoint: api_endpoint)
+      rescue StandardError => e
+        UI.user_error!(e.message)
+      end
+
+      def self.ac_switch_sub_organization(sub_organization_name, personal_api_token, personal_access_key)
+        name = sub_organization_name.to_s.strip
+        return if name.empty?
+
+        @@apiToken = AuthService.switch_to_sub_organization(
+          root_token: @@apiToken,
+          name: name,
+          pat: personal_api_token || personal_access_key,
+          auth_endpoint: @@authEndpoint,
+          api_endpoint: @@apiEndpoint
+        )
+        UI.message("Switched to sub-organization: #{name}")
+      rescue StandardError => e
+        UI.user_error!(e.message)
       end
 
       def self.checkTaskStatus(taskId)
@@ -229,6 +254,12 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :personalAccessKey,
                                        env_name: "AC_PERSONAL_ACCESS_KEY",
                                        description: "Provide Personal Access Key to authenticate Appcircle services (use either personalAPIToken or personalAccessKey)",
+                                       optional: true,
+                                       type: String),
+
+          FastlaneCore::ConfigItem.new(key: :subOrganizationName,
+                                       env_name: "AC_SUB_ORGANIZATION_NAME",
+                                       description: "Optional: Sub-organization name of the target publish profile. Use it when the Personal API Token or Personal Access Key belongs to the root organization. Leave empty to use the organization of the token",
                                        optional: true,
                                        type: String),
 

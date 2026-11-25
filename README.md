@@ -111,6 +111,7 @@ fastlane add_plugin appcircle_publish
 ```
 
 - `personalAPIToken` / `personalAccessKey`: Provide exactly one to authenticate with Appcircle services. Providing both, or neither, fails with a descriptive error.
+- `subOrganizationName` (optional): Sub-organization name of the target Publish profile. See [Sub-Organizations](#sub-organizations).
 - `platform`: Target platform of the Publish profile: `ios` or `android`.
 - `publishProfile`: Name of the Publish profile to target.
 - `upload` (default `false`): Upload `appPath` as a new app version.
@@ -123,6 +124,7 @@ If you run a self-hosted Appcircle installation, point the action to your own en
 
 - `authEndpoint` (optional): Authentication endpoint URL. Defaults to `https://auth.appcircle.io`.
 - `apiEndpoint` (optional): API endpoint URL. Defaults to `https://api.appcircle.io`.
+- Set `authEndpoint` and `apiEndpoint` together. If you set only one of them, the lane stops before it sends a request, so a self-hosted token never goes to the Appcircle cloud.
 
 ```ruby
     appcircle_publish(
@@ -136,6 +138,26 @@ If you run a self-hosted Appcircle installation, point the action to your own en
 ```
 
 > **Self-signed or private CA certificates:** If your self-hosted Appcircle server uses a self-signed certificate (or one issued by a private/internal CA), requests will fail certificate validation. The plugin does not disable TLS verification. Trust the server's CA on the machine running Fastlane: add it to the system certificate store, or point the `SSL_CERT_FILE` environment variable at a PEM bundle that includes it.
+
+### Sub-Organizations
+
+If your Personal API Token or Personal Access Key belongs to the root organization and the target Publish profile is in a sub-organization, set the optional `subOrganizationName` parameter. The action then uses a token of that sub-organization for all later requests. If you use a token or key of the sub-organization, you do not need this parameter.
+
+- `subOrganizationName` (optional): The exact name of the sub-organization (case-sensitive). If the action cannot find the sub-organization, or the token cannot access it, the lane fails. The action does not fall back to the root organization.
+
+The option also reads the `AC_SUB_ORGANIZATION_NAME` environment variable. The other Appcircle Fastlane plugins use the same variable, so if your lane sets it for one action, it applies to this action too.
+
+```ruby
+    appcircle_publish(
+      personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
+      subOrganizationName: "My Sub Organization",
+      platform: "$(AC_PLATFORM)",
+      publishProfile: "$(AC_PUBLISH_PROFILE)",
+      upload: true,
+      publish: true,
+      appPath: "$(AC_APP_PATH)"
+    )
+```
 
 ### Leveraging Environment Variables
 
